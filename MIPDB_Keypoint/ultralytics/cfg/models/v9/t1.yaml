@@ -1,0 +1,112 @@
+# YOLOv9
+ 
+# parameters
+nc: 80  # number of classes
+depth_multiple: 1  # model depth multiple
+width_multiple: 1  # layer channel multiple
+#activation: nn.LeakyReLU(0.1)
+#activation: nn.ReLU()
+ 
+# anchors
+anchors: 3
+ 
+# YOLOv9 backbone
+backbone:
+  [
+   [-1, 1, Silence, []],
+   # conv down
+   [-1, 1, Conv, [64, 3, 2]],  # 1-P1/2
+   # conv down
+   [-1, 1, Conv, [128, 3, 2]],  # 2-P2/4
+   # elan-1 block
+   [-1, 1, RepNCSPELAN4, [256, 128, 64, 1]],  # 3
+   # conv down
+   [-1, 1, Conv, [256, 3, 2]],  # 4-P3/8
+   # elan-2 block
+   [-1, 1, RepNCSPELAN4, [512, 256, 128, 1]],  # 5
+   # conv down
+   [-1, 1, Conv, [512, 3, 2]],  # 6-P4/16
+   # elan-2 block
+   [-1, 1, RepNCSPELAN4, [512, 512, 256, 1]],  # 7
+   # conv down
+   [-1, 1, Conv, [512, 3, 2]],  # 8-P5/32
+   # elan-2 block
+   [-1, 1, RepNCSPELAN4, [512, 512, 256, 1]],  # 9
+   [-1, 1, SPPELAN, [512, 256]],  # 10
+  ]
+ 
+# YOLOv9 head
+head:
+  [
+   # up-concat merge
+   [-1, 1, nn.Upsample, [None, 2, 'nearest']],
+   [[-1, 7], 1, Concat, [1]],  # cat backbone P4
+ 
+   # elan-2 block
+   [-1, 1, RepNCSPELAN4, [512, 512, 256, 1]],  # 13
+ 
+   # up-concat merge
+   [-1, 1, nn.Upsample, [None, 2, 'nearest']],
+   [[-1, 5], 1, Concat, [1]],  # cat backbone P3
+ 
+   # elan-2 block
+   [-1, 1, RepNCSPELAN4, [256, 256, 128, 1]],  # 16 (P3/8-small)
+   [-1, 1, MultiSEAM, []],  # 17 添加一行我们的改进机制
+ 
+   # conv-down merge
+   [-1, 1, Conv, [256, 3, 2]],
+   [[-1, 13], 1, Concat, [1]],  # cat head P4
+ 
+   # elan-2 block
+   [-1, 1, RepNCSPELAN4, [512, 512, 256, 1]],  # 20 (P4/16-medium)
+   [-1, 1, MultiSEAM, []],  # 21 添加一行我们的改进机制
+ 
+   # conv-down merge
+   [-1, 1, Conv, [512, 3, 2]],
+   [[-1, 10], 1, Concat, [1]],  # cat head P5
+ 
+   # elan-2 block
+   [-1, 1, RepNCSPELAN4, [512, 512, 256, 1]],  # 24 (P5/32-large)
+   [-1, 1, MultiSEAM, []],  # 25 添加一行我们的改进机制
+ 
+   # routing
+   [5, 1, CBLinear, [[256]]], # 26
+   [7, 1, CBLinear, [[256, 512]]], # 27
+   [9, 1, CBLinear, [[256, 512, 512]]], # 28
+ 
+   # conv down
+   [0, 1, Conv, [64, 3, 2]],  # 29-P1/2
+ 
+   # conv down
+   [-1, 1, Conv, [128, 3, 2]],  # 30-P2/4
+ 
+   # elan-1 block
+   [-1, 1, RepNCSPELAN4, [256, 128, 64, 1]],  # 31
+ 
+   # conv down fuse
+   [-1, 1, Conv, [256, 3, 2]],  # 32-P3/8
+   [[26, 27, 28, -1], 1, CBFuse, [[0, 0, 0]]], # 33
+ 
+   # elan-2 block
+   [-1, 1, RepNCSPELAN4, [512, 256, 128, 1]],  # 34
+   [-1, 1, MultiSEAM, []],  # 35 添加一行我们的改进机制
+ 
+   # conv down fuse
+   [-1, 1, Conv, [512, 3, 2]],  # 36-P4/16
+   [[27, 28, -1], 1, CBFuse, [[1, 1]]], # 37
+ 
+   # elan-2 block
+   [-1, 1, RepNCSPELAN4, [512, 512, 256, 1]],  # 38
+   [-1, 1, MultiSEAM, []],  # 39 添加一行我们的改进机制
+ 
+   # conv down fuse
+   [-1, 1, Conv, [512, 3, 2]],  # 40-P5/32
+   [[28, -1], 1, CBFuse, [[2]]], # 41
+ 
+   # elan-2 block
+   [-1, 1, RepNCSPELAN4, [512, 512, 256, 1]],  # 42
+   [-1, 1, MultiSEAM, []],  # 43 添加一行我们的改进机制
+ 
+   # detect
+   [[35, 39, 43, 17, 21, 25], 1, DualDDetect, [nc]],  # DualDDetect(A3, A4, A5, P3, P4, P5)
+  ]
