@@ -1,0 +1,46 @@
+# 默认配置
+
+# 数据
+image_dir: ./data/image
+mask_dir: ./data/mask
+val_split: 0.2
+input_size: 512
+num_classes: 2
+class_names: [background, foreground]
+
+# 模型
+model: deeplabv3
+backbone: resnet50
+pretrained_weights: null
+freeze_bn: true
+
+# 训练
+epochs: 200
+batch_size: 8
+lr: 5.0e-5
+weight_decay: 1.0e-3
+num_workers: 0
+aux_weight: 0.4
+scheduler: cosine
+min_lr: 1.0e-7
+step_size: 50
+step_gamma: 0.5
+patience: 30
+
+# 增强
+aug_strength: strong
+
+# 保存
+save_dir: ./runs
+exp_name: null
+save_freq: 10
+resume: null
+
+# 可视化
+plot_freq: 10
+num_vis_samples: 8
+
+# 其他
+seed: 42
+device: cuda
+deterministic: false

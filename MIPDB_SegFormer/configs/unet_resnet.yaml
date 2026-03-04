@@ -1,0 +1,33 @@
+# UNet + ResNet
+
+image_dir: ./data/image
+mask_dir: ./data/mask
+val_split: 0.2
+input_size: 512
+num_classes: 2
+class_names: [background, corn]
+
+
+name: unet_resnet
+backbone: resnet34# resnet34, resnet50, resnet101
+
+
+epochs: 200
+batch_size: 16
+lr: 5.0e-5
+weight_decay: 1.0e-3
+num_workers: 4
+aux_weight: 0.0
+scheduler: cosine
+min_lr: 1.0e-7
+patience: 30
+
+
+strength: strong
+
+
+save_dir: ./runs/unet_resnet
+save_freq: 10
+
+seed: 42
+device: cuda

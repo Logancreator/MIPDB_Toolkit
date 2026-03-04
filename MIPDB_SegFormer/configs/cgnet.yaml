@@ -1,0 +1,30 @@
+# CGNet
+model: cgnet
+backbone: none
+
+# CGNet特有参数
+M: 3
+N: 21
+
+image_dir: ./data/image
+mask_dir: ./data/mask
+val_split: 0.2
+input_size: 512
+num_classes: 2
+class_names: [background, corn]
+
+epochs: 300
+batch_size: 8
+lr: 1.0e-3
+weight_decay: 1.0e-4
+num_workers: 4
+aux_weight: 0.0
+scheduler: cosine
+min_lr: 1.0e-7
+patience: 50
+
+aug_strength: strong
+save_dir: ./runs
+save_freq: 10
+seed: 42
+device: cuda

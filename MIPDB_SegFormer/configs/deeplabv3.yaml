@@ -1,0 +1,38 @@
+# DeepLabV3
+
+
+image_dir: ./data/image
+mask_dir: ./data/mask
+val_split: 0.2
+input_size: 512
+num_classes: 2
+class_names: [background, corn]
+
+
+model: deeplabv3
+backbone: resnet101
+freeze_bn: true
+
+epochs: 200
+batch_size: 8
+lr: 1.0e-4
+weight_decay: 1.0e-4
+num_workers: 4
+aux_weight: 0.4
+scheduler: cosine
+min_lr: 1.0e-7
+patience: 50
+
+
+strength: strong
+
+checkpoint:
+save_dir: ./runs/deeplabv3
+save_freq: 20
+
+
+plot_freq: 10
+num_vis_samples: 8
+
+seed: 42
+device: cuda
