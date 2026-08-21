@@ -1,0 +1,14 @@
+# Minimum required Python version
+python>=3.9
+
+# Core dependencies
+Pillow
+numpy
+scipy
+opencv-python
+matplotlib
+tqdm
+
+# Optional / useful tools
+# - Add versions/pinning as needed (e.g. numpy==1.25.0)
+# - If you use a virtual environment manager, create one before installing these requirements

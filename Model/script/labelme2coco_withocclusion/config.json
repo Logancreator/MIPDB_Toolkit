@@ -1,0 +1,26 @@
+{
+    "input_dir": "G:/maize/process/draw/draw_data",
+    "output_dir": "G:/maize/process/draw/draw_coco",
+    "bbox_expansion": 25,
+    "occlusion_threshold": 20,
+    "preprocessing": {
+        "ratio": 1,
+        "num_points": 17,
+        "num_pad": 15
+    },
+    "visualization": {
+        "enable": true,
+        "keypoint_radius": 8,
+        "keypoint_occluded_radius": 5,
+        "line_thickness": 3,
+        "bbox_thickness": 3,
+        "font_scale": 1,
+        "font_thickness": 3,
+        "text_offset": 20,
+        "keypoint_label_offset": 5,
+        "normal_color": [0, 255, 0],
+        "occluded_color": [0, 0, 255],
+        "bbox_color": [255, 0, 0],
+        "text_color": [255, 255, 255]
+    }
+}
