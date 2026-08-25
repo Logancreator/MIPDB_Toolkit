@@ -1,18 +1,10 @@
 *.pth
-/RGBD/process/input
-/RGBD/process/output
-/RGBD/process
-/RGBD/occlusion_net/datasets
-/Deep Learning/project/jianye_project/data
-Deep Learning/project/sample_project/fashionmnist/fashion-mnist_train.csv
-Deep Learning/project/sample_project/fashionmnist/fashion-mnist_test.csv
-Deep Learning/project/sample_project/fashionmnist/train.csv
-Deep Learning/project/sample_project/fashionmnist/test.csv
-/backup/Deep Learning/project/sample_project/fashionmnist
-/Maize_Occlusion_Net/test_coco
-/Maize_Occlusion_Net/split_dataset
-/ultralytics/ultralytics/yolo
 File/pic/Figure1.ai
-*.ai
-*.pdf
-*.pptx
+*.ai.git/objects/5e/90d6453b4a5c954678fb0d1d2b3c9134725db2
+.git/objects/cc/88ce368952e2f826978e726917ca4778be1f49
+.git/objects/d5/a14a2ea33320e97fb6e8d48059e99237afb9d6
+File/pic/Figure1 - update.pdf
+File/pic/Figure1.ai
+File/pic/Figure1.pdf
+File/pic/Figure2.pptx
+File/pic/pic_new/Figure1.ai
