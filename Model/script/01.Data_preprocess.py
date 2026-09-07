@@ -312,8 +312,8 @@ def parse_args():
                         help='Directory to save processed points (only needed when task=all)')
     parser.add_argument('--ratio', type=float, default=1,
                         help='Scaling ratio (default: 1)')
-    parser.add_argument('--num-points', type=int, default=10,
-                        help='Number of points to select (default: 10)')
+    parser.add_argument('--num-points', type=int, default=17,
+                        help='Number of points to select (default: 17)')
     parser.add_argument('--num-pad', type=int, default=10,
                         help='Number of additional points between each pair of points during interpolation (default: 10)')
     return parser.parse_args()
