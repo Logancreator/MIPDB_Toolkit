@@ -5,12 +5,13 @@ Annotation Dataset and Benchmark for Maize in Complex Field Scenes**.
 
 This repository is being released openly to make the available MIPDB
 resources easier to use and reproduce. The public release is staged: **the
-current release contains object-detection model weights and data-processing
-tools**. Keypoint-detection and semantic-segmentation models will be added
-when they are ready.
+current release contains object-detection model weights, data-processing
+tools, and links to the keypoint-detection and semantic-segmentation model
+weights**. The larger keypoint-detection and semantic-segmentation checkpoints
+are hosted on Google Drive.
 
 <p align="center">
-  <img src="./src/overview.png" alt="MIPDB data collection, labeling, preprocessing, and benchmark overview" width="100%">
+  <img src="./src/overview.png" alt="MIPDB data collection, labeling, preprocessing, and benchmark overview" width="80%">
 </p>
 
 ## Paper
@@ -30,8 +31,8 @@ context; the currently released model weights are listed in
 [Available models](#available-models).
 
 <p align="center">
-  <img src="./src/dslr.png" alt="DSLR image detection and pose examples" width="49%">
-  <img src="./src/uav.png" alt="UAV image detection and pose examples" width="49%">
+  <img src="./src/dslr.png" alt="DSLR image detection and pose examples" width="59%">
+  <img src="./src/uav.png" alt="UAV image detection and pose examples" width="59%">
 </p>
 
 ## Repository contents
@@ -62,6 +63,14 @@ files are intended for inference and further experimentation. Check the
 corresponding model or training configuration before comparing results across
 variants.
 
+### Additional model weights
+
+The keypoint-detection and semantic-segmentation model weights are too large
+to store directly in this repository. They are available from the following
+Google Drive folder:
+
+[Download keypoint-detection and semantic-segmentation models](https://drive.google.com/drive/folders/1RPDjMjt47Cw3LyaTaCrfR07dYIL7zn2U?usp=drive_link)
+
 ## Data processing
 
 The provided scripts support common preparation steps for MIPDB annotations,
@@ -87,8 +96,8 @@ before running them.
 | Object-detection weights | Available in [`Model/`](./Model) |
 | Dataset-preprocessing scripts | Available |
 | Annotation and data-processing documentation | Available |
-| Keypoint-detection weights | Not released yet |
-| Semantic-segmentation weights | Not released yet |
+| Keypoint-detection weights | Available via [Google Drive](https://drive.google.com/drive/folders/1RPDjMjt47Cw3LyaTaCrfR07dYIL7zn2U?usp=drive_link) |
+| Semantic-segmentation weights | Available via [Google Drive](https://drive.google.com/drive/folders/1RPDjMjt47Cw3LyaTaCrfR07dYIL7zn2U?usp=drive_link) |
 
 Please treat this table as the source of truth for what is currently
 available in the open repository.
@@ -109,4 +118,6 @@ Will come.
 ## Disclaimer
 
 This repository is an ongoing public release. Model weights, scripts, and
-documentation may be updated as additional components are prepared.
+documentation may be updated as additional components are prepared. If you
+have any questions, please feel free to email me at
+jianye.chang@ucdconnect.ie.

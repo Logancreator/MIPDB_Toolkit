@@ -1,0 +1,11 @@
+Model/dslr_pose_hrnet-best.pth
+Model/dslr_pose_PFLO-best.pt
+Model/dslr_pose_pointlinenet-best.pth
+Model/dslr_pose_vitpose-best.pth
+Model/dslr_pose_yolov26-best.pt
+Model/dslr_seg_segformer-best.pth
+Model/uav_pose_hrnet-best.pth
+Model/uav_pose_PFLO-best.pt
+Model/uav_pose_pointlinenet-best.pth
+Model/uav_pose_vitpose-best.pth
+Model/uav_pose_yolov26-best.pt
