@@ -1,9 +1,17 @@
 [TOC]
-# Keypoint Annotation for Maize in Complex Field Scenes: A High-quality Dataset and Benchmark
+# MIPDB: A High-Quality Keypoint Annotation Dataset and Benchmark for Maize in Complex Field Scenes
 
-This document provides the data and annotation instructions for the paper **"Keypoint Annotation for Maize in Complex Field Scenes: A High-quality Dataset and Benchmark"**. It describes how images were collected, how maize stems and leaves were annotated with keypoints and bounding boxes, how the phenotypic database is organized, and how to use the provided Python scripts to convert and visualize annotations for downstream benchmarking and model development.
+This document provides the data and annotation instructions for the paper **"MIPDB: A High-Quality Keypoint Annotation Dataset and Benchmark for Maize in Complex Field Scenes"**. MIPDB stands for the **Maize Image Phenotyping Database**. It describes how images were collected, how maize stems and leaves were annotated with keypoints and bounding boxes, how the phenotypic database is organized, and how to use the provided Python scripts to convert and visualize annotations for downstream benchmarking and model development.
 
-## Maize Phenotypic Dataset User Guide
+**[NEW—REVISION] Authors:** Jianye Chang, Panpan Wang, Wenpeng Deng, Mengtao Wang, Feng Qin, Zhihao Hou, Jason John Walsh, Eleni Mangina, Sonia Negrão, Yun Zhou, Ting Yang, Zhen Zhang, Hailin Liu, and Jue Ruan. Chang, Wang, and Deng contributed equally. Corresponding authors: Zhen Zhang, Hailin Liu, and Jue Ruan.
+
+**[NEW—REVISION] Dataset overview:** MIPDB contains 35,739 field-acquired RGB images collected from 2021 to 2024. Of these, 28,532 were acquired using handheld DSLR cameras and 7,207 using UAVs. Structured point-line annotations are available for 17,697 images, including 14,855 DSLR images and 2,842 UAV images.
+
+> **[NEW—REVISION] Scope of the annotation protocol.** The original annotation campaign used visual judgment to select foreground plants; it did not record fixed pixel-size, camera-distance, or occlusion thresholds. The protocol below documents the operational decisions that should be used for reproducible re-annotation and future dataset extensions. It should not be interpreted as a retrospective claim that these quantitative rules were applied to every image in the original release.
+
+## Maize Image Phenotyping Database User Guide
+
+**[NEW—REVISION] Dataset scope:** MIPDB is primarily a structural point-line and keypoint dataset for maize pose estimation and phenotypic analysis. Bounding boxes derived from point-line annotations and the separate segmentation experiment are auxiliary resources, not independent exhaustive annotations of every plant visible in every image.
 
 ## 1 Labelme Overview
 
@@ -146,8 +154,33 @@ Labelme is used to annotate both stems and leaves. To balance efficiency and inf
 
 ![](labelme.assets\1686620105894.jpg)
 
+**[NEW—REVISION] Annotation representation:** The original Labelme lines are manually clicked point-line annotations. For model-format conversion, these points may be densified or resampled into a fixed number of points. Manually clicked points and generated points must therefore be distinguished; generated points are not additional independent manual observations. The plant ID in a leaf label, such as `1-y`, identifies the parent plant instance.
+
+#### 2.2.3 **[NEW—REVISION]** Foreground-plant inclusion and exclusion protocol
+
+**[NEW—REVISION]** The annotation unit is an individually identifiable maize plant in the image. Inclusion is based on whether the plant can be attributed to one plant instance and whether at least one stem segment or leaf midrib can be followed reliably in the visible image. The protocol does not use camera distance as a direct criterion, because the same physical plant can occupy different numbers of pixels in DSLR and UAV images. Instead, visibility and instance identifiability are assessed in image coordinates.
+
+**[NEW—REVISION]** For reproducible annotation, apply the following decision rules:
+
+| **[NEW] Image condition** | **[NEW] Annotation rule** |
+|---|---|
+| An individual plant is identifiable and at least one stem or leaf midrib is visibly traceable | Include the plant and annotate all traceable visible organs. |
+| A plant is visible only as an unidentifiable fragment, or cannot be assigned to one plant instance | Exclude it from instance-level keypoint annotation. |
+| A background plant is identifiable but is outside the foreground acquisition unit | Exclude it unless the image is designated for exhaustive-scene annotation. Record this as an exclusion rather than treating it as a confirmed negative plant. |
+| A plant is partially occluded by another plant or field object, but the visible organ can still be attributed to it | Include the visible stem or midrib segment and preserve the plant ID. Do not draw through the occluder. |
+| Two plants overlap and their stems or midribs cannot be assigned unambiguously | Annotate only the unambiguous portions; do not merge the two plants into one instance. If no unambiguous portion remains, exclude the fragment. |
+| A leaf tip is visible | Trace the midrib to the visible tip. |
+| A leaf tip is hidden, truncated by the image boundary, or not reliably discernible | Stop at the last visually supported point and do not infer the hidden continuation. |
+| The plant is too small or blurred for reliable instance attribution | Exclude it and record the reason as `unidentifiable` or `insufficient_visible_structure`, rather than using an arbitrary pixel threshold. |
+
+**[NEW—REVISION]** For a future quantitative re-annotation audit, each image should additionally record: the foreground acquisition unit, plant instance ID, visibility status, occlusion status, image-boundary truncation, and exclusion reason. A fixed minimum visible-length or pixel-size threshold should be selected from an audited pilot subset before it is applied to the full dataset; it must not be introduced retrospectively without measuring its effect on different growth stages and both imaging modalities.
+
+**[NEW—REVISION]** The released point-line annotations are positive instance annotations, not exhaustive masks of every plant visible in every image. Consequently, an unannotated background plant must not automatically be interpreted as a true negative in detection or recall calculations. Exhaustive-scene detection evaluation requires either complete annotation of all eligible plants or an exclusion/ignore mask for unannotated regions.
+
 
 ### 2.3 How we label images
+
+> **[NEW—REVISION]** The following steps describe the Labelme operation after the foreground-plant decision has been made. Labelme is the annotation tool; it does not determine which plants should be included.
 
 #### 2.3.1 Step 1 – Open the image
 Open the image in Labelme.
@@ -164,11 +197,11 @@ Stem labels use integer IDs, for example 1, 2, 3, 4, …
 
 ![本地路径](labelme.assets/1686490486552.jpg)
 
-Leaf labels use the pattern `plantID-y`, for example 1-y, 2-y, 3-y, 4-y, …
+Leaf labels use the pattern `plantID-y`, for example `1-y`, `2-y`, `3-y`, `4-y`, …
 
 ![本地路径](labelme.assets/1686490535956.jpg)
 
-All leaves belonging to the first maize plant are labeled `1-y`, and so on for other plants.
+All leaves belonging to the first maize plant are labeled `1-y`, and so on for other plants. **[NEW—REVISION]** The shared plant ID links each leaf line to its parent plant; it does not imply that the hidden part of an occluded leaf has been reconstructed.
 
 #### 2.3.4 Step 4 – Save
 Save the JSON file to the same folder as the image, using the same filename prefix.
@@ -216,7 +249,11 @@ The maize phenotypic database follows a standard browser/server (B/S) architectu
 
 ## 4 Dataset Presentation and Usage
 
-### 4.1 Data visualization
+### 4.1 Website and access
+
+**[NEW—REVISION]** MIPDB is publicly accessible at [http://phenomics.agis.org.cn](http://phenomics.agis.org.cn). The website provides dataset browsing, annotation visualization, and batch access to images and annotation files. Users should consult the website for the current access and download procedure.
+
+### 4.2 Data visualization
 
 The visualization module has two subcomponents: image display and annotation display. Images are grouped by acquisition time (e.g., quarterly), and users can click any image to view its annotations.
 
@@ -224,652 +261,6 @@ The visualization module has two subcomponents: image display and annotation dis
     <img src="labelme.assets\1686627380270.png" >
 </figure>
 
-
-### 4.2 Querying and using data
-
-The database website is deployed on a Linux server and mainly consists of two pages: a dataset overview page and a dataset detail page. Data will be published at http://www.agis.maize.com/ (placeholder). Authorized users can log in to browse and download phenotypic data.
-
-<figure align=center>
-    <img src="labelme.assets\1686627540248.png" >
-    <img src="labelme.assets\1686627648584.png" >
-</figure>
-
-### 4.3 Reading JSON annotations
-
-#### 4.3.1 Read JSON files as keypoints
-
-```python
-from glob import glob
-from itertools import groupby
-
-import json
-import os
-import cv2
-import codecs
-import math
-
-
-def getLineIndex(x0, y0, x1, y1):
-    """Return all pixel coordinates along a line segment defined by two points."""
-    steep = abs(y1 - y0) > abs(x1 - x0)
-    if steep:
-        x0, y0 = y0, x0
-        x1, y1 = y1, x1
-    switched = False
-    if x0 > x1:
-        switched = True
-        x0, x1 = x1, x0
-        y0, y1 = y1, y0
-    ystep = 1 if y0 < y1 else -1
-    deltax = x1 - x0
-    deltay = abs(y1 - y0)
-    error = -deltax / 2
-    y = y0
-    line = []
-    for x in range(round(x0), round(x1 + 1)):
-        if steep:
-            line.append((round(y), round(x)))
-        else:
-            line.append((round(x), round(y)))
-
-        error += deltay
-        if error > 0:
-            y += ystep
-            error -= deltax
-    if switched:
-        line.reverse()
-    return line
-
-
-def getIndexList(json_path):
-    index_list = []
-    data = json.load(open(json_path, encoding="UTF-8"))
-    for line in data["shapes"]:
-        index_dict = {}
-        point_list = []
-        index_dict["label"] = line["label"]
-
-        length = len(line["points"])
-        for index, point in enumerate(line["points"]):
-            if index < length - 1:
-                temp_list = getLineIndex(
-                    point[0],
-                    point[1],
-                    line["points"][index + 1][0],
-                    line["points"][index + 1][1],
-                )
-                for p in temp_list:
-                    point_list.append(p)
-        index_dict["pointList"] = point_list
-        index_list.append(index_dict)
-    return index_list
-
-
-def selectPoints(index_list):
-    """Select 10 equally spaced keypoints along each polyline."""
-    for i, line in enumerate(index_list):
-        result_list = []
-        all_points = line["pointList"]
-        step = len(all_points) // 9
-        for index in range(0, len(all_points), step):
-            result_list.append(all_points[index])
-        if len(result_list) == 10:
-            if result_list[-1] != all_points[-1]:
-                result_list[-1] = all_points[-1]
-        else:
-            result_list.append(all_points[-1])
-
-        assert len(result_list) == 10, "Keypoint selection error!"
-        index_list[i]["pointList"] = result_list
-    return index_list
-
-
-def getRecsAndKeyPoints(img_path, json_path):
-    """Get bounding boxes and keypoints from a Labelme JSON file."""
-    height, width, channels = cv2.imread(img_path).shape
-    height = height * 2
-    width = width * 2
-    info = []
-    data = json.load(open(json_path, encoding="UTF-8"))
-    for line in data["shapes"]:
-
-        line_points = []
-        all_points = []
-        length = len(line["points"])
-        num_list = [
-            "".join(list(g)) for k, g in groupby(line["label"], key=lambda x: x.isdigit())
-        ]
-
-        if num_list[0].isdigit():
-            num_plant = int(num_list[0])
-        elif len(num_list) > 1 and num_list[1].isdigit():
-            num_plant = int(num_list[1])
-        else:
-            raise ValueError("wrong num")
-
-        left_x, left_y, right_x, right_y = 0, 0, 0, 0
-        for index, point in enumerate(line["points"]):
-            line_points.append([round(point[0] / 4), round(point[1] / 4)])
-            if index < length - 1:
-
-                temp_list = getLineIndex(
-                    point[0] / 4,
-                    point[1] / 4,
-                    line["points"][index + 1][0] / 4,
-                    line["points"][index + 1][1] / 4,
-                )
-                for p in temp_list:
-                    all_points.append(p)
-
-            point = [item / 4 for item in point]
-            if left_x == 0:
-                left_x = point[0]
-                right_x = point[0]
-                left_y = point[1]
-                right_y = point[1]
-            else:
-                if point[0] < left_x:
-                    left_x = point[0]
-                if point[0] > right_x:
-                    right_x = point[0]
-                if point[1] < left_y:
-                    left_y = point[1]
-                if point[1] > right_y:
-                    right_y = point[1]
-
-        step = len(all_points) // 9
-        key_points = []
-        if step == 0:
-            for i in range(0, len(all_points)):
-                key_points.append(all_points[i][0])
-                key_points.append(all_points[i][1])
-        else:
-            for i in range(0, 9 * step, step):
-                key_points.append(all_points[i][0])
-                key_points.append(all_points[i][1])
-        if len(key_points) == 20:
-            if key_points[-1] != all_points[-1][1] or key_points[-2] != all_points[-1][0]:
-                key_points[-1] = all_points[-1][1]
-                key_points[-2] = all_points[-1][0]
-        else:
-            if len(key_points) == 18:
-                key_points.append(all_points[-1][0])
-                key_points.append(all_points[-1][1])
-            else:
-                for _ in range(0, 20 - len(key_points)):
-                    key_points.append(0)
-        if len(key_points) != 20:
-            print("error")
-        assert len(key_points) == 20, "Keypoint selection error!"
-        info.append(
-            {
-                "label": ("leaf" if "y" in line["label"] else "root"),
-                "bbox": [
-                    math.floor(left_x) - 20 if math.floor(left_x) - 20 > 0 else 0,
-                    math.floor(left_y) - 20 if math.floor(left_y) - 20 > 0 else 0,
-                    math.ceil(right_x) + 20 if math.ceil(right_x) + 20 < width else width,
-                    math.ceil(right_y) + 20 if math.ceil(right_y) + 20 < height else height,
-                ],
-                "keyPoints": key_points,
-                "linePoints": line_points,
-            }
-        )
-
-    # for num, plant in plants.items():
-    #     left_x, left_y, right_x, right_y = 0, 0, 0, 0
-    #     for point in plant:
-    #         point = [item / 4 for item in point]
-    #         if left_x == 0:
-    #             left_x = point[0]
-    #             right_x = point[0]
-    #             left_y = point[1]
-    #             right_y = point[1]
-    #         else:
-    #             if point[0] < left_x:
-    #                 left_x = point[0]
-    #             if point[0] > right_x:
-    #                 right_x = point[0]
-    #             if point[1] < left_y:
-    #                 left_y = point[1]
-    #             if point[1] > right_y:
-    #                 right_y = point[1]
-    #     info.append(
-    #         {
-    #             'label': 'plant',
-    #             'bbox': [
-    #                 math.floor(left_x) - 20 if math.floor(left_x) - 20 > 0 else 0,
-    #                 math.floor(left_y) - 20 if math.floor(left_y) - 20 > 0 else 0,
-    #                 math.ceil(right_x) + 20 if math.ceil(right_x) + 20 < width else width,
-    #                 math.ceil(right_y) + 20 if math.ceil(right_y) + 20 < height else height
-    #             ]
-    #         })
-
-    return info
-
-
-def makeAnnotations(imgs_path, jsons_path, saved_path):
-
-    if not os.path.exists(saved_path + "Annotations"):
-        os.makedirs(saved_path + "Annotations")
-
-    files = glob(jsons_path + "\\*.json")
-    files = [i.replace("\\", "/").split("/")[-1].split(".json")[0] for i in files]
-
-    # Read annotation information and write VOC-style XML
-    for file_name in files:
-        if os.path.exists(saved_path + "Annotations/" + file_name + ".xml"):
-            continue
-        jpg_path = os.path.join(imgs_path, file_name + ".JPG")
-        json_path = os.path.join(jsons_path, file_name + ".json")
-        if not os.path.exists(jpg_path):
-            print("pass {}".format(os.path.basename(jpg_path)))
-            continue
-        print(os.path.basename(jpg_path))
-        infos = getRecsAndKeyPoints(jpg_path, json_path)
-        height, width, channels = cv2.imread(jpg_path).shape
-        height = height * 2
-        width = width * 2
-
-        with codecs.open(saved_path + "Annotations/" + file_name + ".xml", "w", "utf-8") as xml:
-            xml.write("<annotation>\n")
-            xml.write("\t<folder>" + "cornDataset" + "</folder>\n")
-            xml.write("\t<filename>" + file_name + ".jpg" + "</filename>\n")
-            xml.write("\t<source>\n")
-            xml.write("\t\t<database>cornDataset</database>\n")
-            xml.write("\t\t<annotation>corn</annotation>\n")
-            xml.write("\t\t<image>flickr</image>\n")
-            xml.write("\t</source>\n")
-            xml.write("\t<size>\n")
-            xml.write("\t\t<width>" + str(width) + "</width>\n")
-            xml.write("\t\t<height>" + str(height) + "</height>\n")
-            xml.write("\t\t<depth>" + str(channels) + "</depth>\n")
-            xml.write("\t</size>\n")
-            xml.write("\t<segmented>0</segmented>\n")
-            for index, info in enumerate(infos):
-                name = info["label"]
-                coordinate = info["bbox"]
-                if "keyPoints" in info.keys():
-                    assert "linePoints" in info.keys(), "key error"
-                    key_points = info["keyPoints"]
-                    line_points = info["linePoints"]
-                else:
-                    key_points = None
-                    line_points = None
-                xmin = coordinate[0]
-                ymin = coordinate[1]
-                xmax = coordinate[2]
-                ymax = coordinate[3]
-                if xmax <= xmin:
-                    print("xmax={a}, xmin = {b}, skip this object".format(a=xmax, b=xmin))
-                elif ymax <= ymin:
-                    print("ymax={a}, ymin = {b}, skip this object".format(a=ymax, b=ymin))
-                else:
-                    xml.write("\t<object>\n")
-                    xml.write("\t\t<name>" + name + "</name>\n")
-                    xml.write("\t\t<pose>Unspecified</pose>\n")
-                    if xmin <= 0 or xmax >= float(width) or ymin <= 0 or ymax >= float(height):
-                        xml.write("\t\t<truncated>1</truncated>\n")
-                    else:
-                        xml.write("\t\t<truncated>0</truncated>\n")
-                    xml.write("\t\t<difficult>0</difficult>\n")
-                    xml.write("\t\t<bndbox>\n")
-                    xml.write("\t\t\t<xmin>" + str(int(xmin)) + "</xmin>\n")
-                    xml.write("\t\t\t<ymin>" + str(int(ymin)) + "</ymin>\n")
-                    xml.write("\t\t\t<xmax>" + str(int(xmax)) + "</xmax>\n")
-                    xml.write("\t\t\t<ymax>" + str(int(ymax)) + "</ymax>\n")
-                    xml.write("\t\t</bndbox>\n")
-                    if key_points is not None and line_points is not None:
-                        xml.write("\t\t<keypoints>" + str(key_points) + "</keypoints>\n")
-                        xml.write("\t\t<linepoints>" + str(line_points) + "</linepoints>\n")
-                    xml.write("\t</object>\n")
-            xml.write("</annotation>")
-
-
-makeAnnotations(imgs_path="xxx", jsons_path="xxx", saved_path="xxx")
-```
-
-#### 4.3.2 Read JSON files as rectangles
-
-```python
-import codecs
-import json
-import math
-import os
-from glob import glob
-
-
-def getRectangles(json_path, offset):
-
-    info = []
-    data = json.load(open(json_path, encoding="UTF-8"))
-    width = data["imageWidth"]
-    height = data["imageHeight"]
-    for line in data["shapes"]:
-
-        left_x, left_y, right_x, right_y = 0, 0, 0, 0
-
-        for index, point in enumerate(line["points"]):
-
-            point = [item / 4 for item in point]
-            if left_x == 0:
-                left_x = point[0]
-                right_x = point[0]
-                left_y = point[1]
-                right_y = point[1]
-            else:
-                if point[0] < left_x:
-                    left_x = point[0]
-                if point[0] > right_x:
-                    right_x = point[0]
-                if point[1] < left_y:
-                    left_y = point[1]
-                if point[1] > right_y:
-                    right_y = point[1]
-        info.append(
-            {
-                "label": ("leaf" if "y" in line["label"] else "root"),
-                "bbox": [
-                    math.floor(left_x) - offset if math.floor(left_x) - offset > 0 else 0,
-                    math.floor(left_y) - offset if math.floor(left_y) - offset > 0 else 0,
-                    math.ceil(right_x) + offset if math.ceil(right_x) + offset < width else width,
-                    math.ceil(right_y) + offset if math.ceil(right_y) + offset < height else height,
-                ],
-            }
-        )
-    return info
-
-
-def readJsons(jsons_path, xmls_save_path):
-
-    """Read Labelme JSON files in bulk and convert them to XML files."""
-
-    files = glob(jsons_path + "\\*.json")
-    files = [i.replace("\\", "/").split("/")[-1].split(".json")[0] for i in files]
-
-    for file_name in files:
-
-        json_path = os.path.join(jsons_path, file_name + ".json")
-        infos = getRectangles(json_path, offset=20)
-        with codecs.open(xmls_save_path + "Annotations/" + file_name + ".xml", "w", "utf-8") as xml:
-            xml.write("<annotation>\n")
-            xml.write("\t<folder>" + "cornDataset" + "</folder>\n")
-            xml.write("\t<filename>" + file_name + ".jpg" + "</filename>\n")
-            xml.write("\t<source>\n")
-            xml.write("\t\t<database>cornDataset</database>\n")
-            xml.write("\t\t<annotation>corn</annotation>\n")
-            xml.write("\t\t<image>flickr</image>\n")
-            xml.write("\t</source>\n")
-            xml.write("\t<segmented>0</segmented>\n")
-            for index, info in enumerate(infos):
-                name = info["label"]
-                rectangle = info["bbox"]
-
-                xmin = rectangle[0]
-                ymin = rectangle[1]
-                xmax = rectangle[2]
-                ymax = rectangle[3]
-
-                if xmax <= xmin:
-                    print("xmax={a}, xmin = {b}, skip this object".format(a=xmax, b=xmin))
-                elif ymax <= ymin:
-                    print("ymax={a}, ymin = {b}, skip this object".format(a=ymax, b=ymin))
-                else:
-                    xml.write("\t<object>\n")
-                    xml.write("\t\t<name>" + name + "</name>\n")
-                    xml.write("\t\t<pose>Unspecified</pose>\n")
-                    xml.write("\t\t<difficult>0</difficult>\n")
-                    xml.write("\t\t<bndbox>\n")
-                    xml.write("\t\t\t<xmin>" + str(int(xmin)) + "</xmin>\n")
-                    xml.write("\t\t\t<ymin>" + str(int(ymin)) + "</ymin>\n")
-                    xml.write("\t\t\t<xmax>" + str(int(xmax)) + "</xmax>\n")
-                    xml.write("\t\t\t<ymax>" + str(int(ymax)) + "</ymax>\n")
-                    xml.write("\t\t</bndbox>\n")
-            xml.write("</annotation>")
-
-
-readJsons(jsons_path="xxx", xmls_save_path="xxx")
-```
-
-#### 4.3.3 Other utility scripts
-
-Import Python packages and helper functions:
-
-```python
-from PIL import Image, ImageColor, ImageOps
-from xml.dom.minidom import parse
-from sklearn.model_selection import train_test_split
-from glob import glob
-import cv2
-import base64
-import json
-import os
-
-
-def checkLabel(jpg_path, xml_path):
-
-    STANDARD_COLORS = [
-        "black",
-        "DarkOrange",
-        "IndianRed",
-        "FireBrick",
-        "HotPink",
-        "Gold",
-        "AliceBlue",
-        "Salmon",
-        "Chartreuse",
-        "Aqua",
-        "Aquamarine",
-        "Azure",
-        "Beige",
-        "Bisque",
-        "BlanchedAlmond",
-        "BlueViolet",
-        "BurlyWood",
-        "CadetBlue",
-        "AntiqueWhite",
-        "Chocolate",
-        "Coral",
-        "CornflowerBlue",
-        "Cornsilk",
-        "Crimson",
-        "Cyan",
-        "DarkCyan",
-        "DarkGoldenRod",
-        "DarkGrey",
-        "DarkKhaki",
-        "DarkOrchid",
-        "DarkSalmon",
-        "DarkTurquoise",
-        "DarkViolet",
-        "DeepPink",
-        "DeepSkyBlue",
-        "DodgerBlue",
-        "FloralWhite",
-        "Fuchsia",
-        "Gainsboro",
-        "GhostWhite",
-        "GoldenRod",
-        "Tan",
-        "HoneyDew",
-        "HotPink",
-        "Ivory",
-        "Khaki",
-        "Lavender",
-        "LavenderBlush",
-        "LemonChiffon",
-        "LightBlue",
-        "LightCoral",
-        "LightCyan",
-        "LightGoldenRodYellow",
-        "LightGray",
-        "LightGrey",
-        "LightPink",
-        "LightSalmon",
-        "LightSkyBlue",
-        "LightSlateGray",
-        "LightSlateGrey",
-        "LightSteelBlue",
-        "LightYellow",
-        "Linen",
-        "Magenta",
-        "MediumAquaMarine",
-        "MediumOrchid",
-        "MediumPurple",
-        "MediumSlateBlue",
-        "MediumTurquoise",
-        "MediumVioletRed",
-        "MintCream",
-        "MistyRose",
-        "Moccasin",
-        "NavajoWhite",
-        "OldLace",
-        "Olive",
-        "OliveDrab",
-        "Orange",
-        "OrangeRed",
-        "Orchid",
-        "PaleGoldenRod",
-        "PaleTurquoise",
-        "PaleVioletRed",
-        "PapayaWhip",
-        "PeachPuff",
-        "Peru",
-        "Pink",
-        "Plum",
-        "PowderBlue",
-        "Purple",
-        "Red",
-        "RosyBrown",
-        "RoyalBlue",
-        "SaddleBrown",
-        "SandyBrown",
-        "SeaShell",
-        "Sienna",
-        "Silver",
-        "SkyBlue",
-        "SlateBlue",
-        "SlateGray",
-        "SlateGrey",
-        "Snow",
-        "SteelBlue",
-        "Teal",
-        "Thistle",
-        "Tomato",
-        "Turquoise",
-        "Violet",
-        "Wheat",
-        "White",
-        "WhiteSmoke",
-        "Yellow",
-    ]
-
-    dom = parse(xml_path)
-    objects = dom.getElementsByTagName("object")
-    colors = [
-        ImageColor.getrgb(STANDARD_COLORS[i % len(STANDARD_COLORS)])
-        for i in range(0, len(objects))
-    ]
-    img = cv2.imread(jpg_path)
-
-    for index, obj in enumerate(objects):
-        xmin = obj.getElementsByTagName("xmin")[0].childNodes[0].data
-        ymin = obj.getElementsByTagName("ymin")[0].childNodes[0].data
-        xmax = obj.getElementsByTagName("xmax")[0].childNodes[0].data
-        ymax = obj.getElementsByTagName("ymax")[0].childNodes[0].data
-        cv2.rectangle(
-            img,
-            (int(xmin), int(ymin)),
-            (int(xmax), int(ymax)),
-            colors[index],
-            1,
-        )
-    cv2.imwrite("result.jpg", img)
-
-
-def getObjectNums():
-    """Count the number of objects per JSON file."""
-
-    total_files = glob(r"G:\\jsons\\*.json")
-    for json_file in total_files:
-        data = json.load(open(json_file, encoding="UTF-8"))
-        if len(data["shapes"]) >= 255:
-            print(json_file)
-            print(len(data["shapes"]))
-
-
-def splitTrainAndVal(isUseTest, saved_path):
-    """Split the dataset into train/val/(optional) test sets."""
-
-    txtsavepath = saved_path + "/ImageSets/Main/"
-    ftrainval = open(txtsavepath + "/trainval.txt", "w")
-    ftest = open(txtsavepath + "/test.txt", "w")
-    ftrain = open(txtsavepath + "/train.txt", "w")
-    fval = open(txtsavepath + "/val.txt", "w")
-    total_files = glob(saved_path + "/Annotations/" + "*.xml")
-    total_files = [
-        i.replace("\\", "/").split("/")[-1].split(".xml")[0] for i in total_files
-    ]
-    trainval_files = []
-    test_files = []
-    if isUseTest:
-        trainval_files, test_files = train_test_split(
-            total_files, test_size=0.002, random_state=55
-        )
-    else:
-        trainval_files = total_files
-    for file in trainval_files:
-        ftrainval.write(file + "\n")
-    train_files, val_files = train_test_split(
-        trainval_files, test_size=0.10, random_state=55
-    )
-    # train
-    for file in train_files:
-        ftrain.write(file + "\n")
-    # val
-    for file in val_files:
-        fval.write(file + "\n")
-    for file in test_files:
-        print(file)
-        ftest.write(file + "\n")
-    ftrainval.close()
-    ftrain.close()
-    fval.close()
-    ftest.close()
-
-
-def jsonToJpg(jsons_path, save_path, resize_ratio=None):
-    """Generate JPG images from json['imageData']."""
-
-    total_files = os.listdir(jsons_path)
-    print(len(total_files))
-
-    for index, json_file in enumerate(total_files):
-        print(index + 1)
-        json_path = os.path.join(jsons_path, json_file)
-
-        image_data = json.load(open(json_path, encoding="UTF-8"))["imageData"]
-        image_data = base64.b64decode(image_data)  # decode
-
-        jpg_path = os.path.join(save_path, json_file.split(".")[0] + ".JPG")
-        file = open(jpg_path, "wb")
-        file.write(image_data)
-        file.close()
-        if resize_ratio is not None:
-
-            image = Image.open(
-                os.path.join(save_path, json_file.split(".")[0] + ".JPG")
-            )
-            image = ImageOps.exif_transpose(image)
-            image = image.resize(
-                (
-                    int(image.size[0] / resize_ratio),
-                    int(image.size[1] / resize_ratio),
-                )
-            )
-            image.save(
-                os.path.join(save_path, json_file.split(".")[0] + ".JPG")
-            )
-```
 
 ## 5 Acknowledgements
 
