@@ -40,7 +40,7 @@ context; the currently released model weights are listed in
 | Path | Description |
 | --- | --- |
 | [`Model/`](./Model) | Pre-trained object-detection weights for DSLR and UAV imagery |
-| [`Script/Dataset_Preprocess/`](./Script/Dataset_Preprocess) | Scripts for preprocessing and converting Labelme annotations |
+| [`Script/Dataset_Preprocess/`](./Script/Dataset_Preprocess) | Task-specific Labelme conversion tools; see its README before choosing a branch |
 | [`Script/labelme2coco_withocclusion/`](./Script/labelme2coco_withocclusion) | Labelme-to-COCO conversion tools with occlusion support |
 | [`Script/UAV_Tile/`](./Script/UAV_Tile) | Utilities for tiling UAV orthophotos |
 | [`Script/Viz/`](./Script/Viz) | Dataset statistics and visualization utilities |
@@ -85,6 +85,8 @@ including:
 
 For the annotation workflow and label definitions, see
 [`MIPDB_Markdown/mpdb_markdown.md`](./MIPDB_Markdown/mpdb_markdown.md).
+For the preprocessing branch selection and output-format differences, see
+[`Script/Dataset_Preprocess/README.md`](./Script/Dataset_Preprocess/README.md).
 Some conversion utilities have their own dependencies; see
 [`Script/labelme2coco_withocclusion/requirements.txt`](./Script/labelme2coco_withocclusion/requirements.txt)
 before running them.

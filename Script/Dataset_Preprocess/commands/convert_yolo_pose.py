@@ -7,6 +7,7 @@ import base64
 from io import BytesIO
 from PIL import Image
 from tqdm import tqdm
+from point_resampling import resample_polyline, resample_visibility
 import random
 
 
@@ -70,6 +71,7 @@ def convert_labelme_to_yolo(
     bbox_expansion=25,
     num_keypoints=17,
     resize_scale=1.0,  # 1.0 = original, 2.0 = half size, 0.5 = double size
+    interpolation_method="legacy",
 ):
     """Convert Labelme line/point annotations directly to YOLO keypoint format.
 
@@ -270,6 +272,13 @@ def convert_labelme_to_yolo(
                             continue
 
                         visibility = shape.get("visibility", [1] * len(points))
+                        source_count = len(points)
+                        points = resample_polyline(
+                            points, num_keypoints, interpolation_method
+                        )
+                        visibility = resample_visibility(
+                            visibility, source_count, num_keypoints
+                        )
 
                         # Enforce fixed number of keypoints: truncate or pad with the last point
                         if len(points) < num_keypoints:
@@ -391,6 +400,12 @@ def parse_args():
     )
     parser.add_argument("--bbox_expansion", type=int, default=25, help="BBox expansion in pixels (default: 25)")
     parser.add_argument("--num_keypoints", type=int, default=17, help="Number of keypoints per instance (default: 17)")
+    parser.add_argument(
+        "--interpolation_method",
+        choices=["legacy", "arc_length"],
+        default="arc_length",
+        help="Point resampling method (default: arc_length)",
+    )
     parser.add_argument("--train_ratio", type=float, default=0.7, help="Training set ratio (default: 0.7)")
     parser.add_argument("--val_ratio", type=float, default=0.2, help="Validation set ratio (default: 0.2)")
     parser.add_argument("--test_ratio", type=float, default=0.1, help="Test set ratio (default: 0.1)")
@@ -445,6 +460,7 @@ def main():
         bbox_expansion=args.bbox_expansion,
         num_keypoints=args.num_keypoints,
         resize_scale=args.resize,
+        interpolation_method=args.interpolation_method,
     )
     print(f"Train files: {len(train_files)}, Val files: {len(val_files)}, Test files: {len(test_files)}")
 

@@ -10,6 +10,7 @@ from io import BytesIO
 from typing import List, Tuple, Dict
 
 from PIL import Image
+from point_resampling import resample_polyline, resample_visibility
 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -109,6 +110,7 @@ def labelme_to_coco_single(
     image_id: int,
     annotation_start_id: int,
     category_lookup: Dict[str, dict],
+    interpolation_method: str = "legacy",
 ) -> Tuple[dict, List[dict], int]:
     """Convert one LabelMe JSON data into COCO image dict and list of annotations."""
 
@@ -155,6 +157,13 @@ def labelme_to_coco_single(
             )
             continue
         category_info = category_lookup[new_category_name]
+        source_count = len(points)
+        points = resample_polyline(
+            points, category_info["num_keypoints"], interpolation_method
+        )
+        visibility = resample_visibility(
+            visibility, source_count, category_info["num_keypoints"]
+        )
 
         bbox = get_bbox_from_points(points, bbox_expansion)
         area = bbox[2] * bbox[3]
@@ -209,6 +218,7 @@ def convert_folder_to_coco(
     output_path: str,
     bbox_expansion: int = 0,
     num_keypoints: int = 17,
+    interpolation_method: str = "legacy",
 ) -> bool:
     """Convert a folder of LabelMe JSON files into a single merged COCO JSON."""
 
@@ -252,6 +262,7 @@ def convert_folder_to_coco(
                 image_id,
                 ann_id,
                 lookup,
+                interpolation_method,
             )
             if anns:
                 coco_output["images"].append(img_info)
@@ -302,6 +313,12 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=17,
         help="Number of keypoints per instance (must match your data, default: 17).",
+    )
+    parser.add_argument(
+        "--interpolation_method",
+        choices=["legacy", "arc_length"],
+        default="arc_length",
+        help="Point resampling method (default: arc_length).",
     )
     parser.add_argument(
         "--images_dir",
@@ -416,6 +433,7 @@ def main() -> None:
         output_path=output_path,
         bbox_expansion=args.bbox_expansion,
         num_keypoints=args.num_keypoints,
+        interpolation_method=args.interpolation_method,
     )
 
     if not success:

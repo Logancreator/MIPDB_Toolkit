@@ -11,6 +11,7 @@ from typing import Any, Optional
 
 from PIL import Image
 import numpy as np
+from point_resampling import resample_polyline, resample_visibility
 
 
 SUPPORTED_EXTENSIONS = {".jpg", ".jpeg", ".png"}
@@ -53,6 +54,12 @@ def parse_args() -> argparse.Namespace:
 		type=int,
 		default=17,
 		help="Expected number of keypoints in each linestrip object",
+	)
+	parser.add_argument(
+		"--interpolation_method",
+		choices=["legacy", "arc_length"],
+		default="arc_length",
+		help="Point resampling method before tiling",
 	)
 	parser.add_argument(
 		"--min_keypoints_in_tile",
@@ -147,7 +154,11 @@ def _load_common_image_from_json_data(image_data_b64: str) -> np.ndarray:
 	return np.asarray(img)
 
 
-def _read_labelme_objects(labelme_data: dict[str, Any], num_keypoints: int) -> list[dict[str, Any]]:
+def _read_labelme_objects(
+	labelme_data: dict[str, Any],
+	num_keypoints: int,
+	interpolation_method: str,
+) -> list[dict[str, Any]]:
 	objects: list[dict[str, Any]] = []
 	for shape in labelme_data.get("shapes", []):
 		if shape.get("shape_type") != "linestrip":
@@ -156,14 +167,10 @@ def _read_labelme_objects(labelme_data: dict[str, Any], num_keypoints: int) -> l
 		points = shape.get("points", [])
 		if not label or not points:
 			continue
-		if len(points) != num_keypoints:
-			continue
-
-		vis = shape.get("visibility", [1] * num_keypoints)
-		if len(vis) < num_keypoints:
-			vis = vis + [1] * (num_keypoints - len(vis))
-		elif len(vis) > num_keypoints:
-			vis = vis[:num_keypoints]
+		source_count = len(points)
+		vis = shape.get("visibility", [1] * source_count)
+		points = resample_polyline(points, num_keypoints, interpolation_method)
+		vis = resample_visibility(vis, source_count, num_keypoints)
 
 		obj = {
 			"class_id": _parse_label(str(label)),
@@ -344,7 +351,9 @@ def process_one_json(json_path: str, args: argparse.Namespace) -> dict[str, int]
 	src_ext = os.path.splitext(image_path)[1].lower() if image_path else ".png"
 	out_format = _infer_output_format(src_ext, args.output_image_format)
 
-	objects = _read_labelme_objects(labelme_data, args.num_keypoints)
+	objects = _read_labelme_objects(
+		labelme_data, args.num_keypoints, args.interpolation_method
+	)
 	if not objects:
 		print(f"[WARN] No valid linestrip object with {args.num_keypoints} keypoints in {json_path}")
 

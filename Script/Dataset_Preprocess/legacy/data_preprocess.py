@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+"""Legacy combined preprocessing entry point.
+
+This file is retained for backward compatibility with the original MIPDB
+workflow. New conversions should use the task-specific commands in the
+parent ``commands`` directory instead.
+"""
+
 import base64
 import json
 import os
@@ -178,7 +185,56 @@ def convert_label_json(json_dir, save_dir, ratio=1):
                     txt_file.writelines(label_str)
 
 
-def sort_and_interpolate_points(json_dir, save_dir, num_selected_points=10, num_pad=10):
+def _resample_polyline_by_arclength(points, num_points):
+    """Resample an ordered polyline at uniform cumulative arc-length intervals."""
+    if num_points < 1:
+        raise ValueError("num_points must be at least 1")
+    if not points:
+        return [[0, 0]] * num_points
+    if len(points) == 1:
+        return [list(points[0]) for _ in range(num_points)]
+    if num_points == 1:
+        return [list(points[0])]
+
+    cumulative_lengths = [0.0]
+    for first, second in zip(points, points[1:]):
+        segment_length = ((second[0] - first[0]) ** 2 + (second[1] - first[1]) ** 2) ** 0.5
+        cumulative_lengths.append(cumulative_lengths[-1] + segment_length)
+
+    total_length = cumulative_lengths[-1]
+    if total_length == 0:
+        return [list(points[0]) for _ in range(num_points)]
+
+    resampled = []
+    segment_index = 0
+    for index in range(num_points):
+        target = total_length * index / (num_points - 1)
+        while (
+            segment_index < len(cumulative_lengths) - 2
+            and cumulative_lengths[segment_index + 1] < target
+        ):
+            segment_index += 1
+
+        start = points[segment_index]
+        end = points[segment_index + 1]
+        segment_start = cumulative_lengths[segment_index]
+        segment_length = cumulative_lengths[segment_index + 1] - segment_start
+        ratio = (target - segment_start) / segment_length if segment_length else 0
+        resampled.append([
+            start[0] + (end[0] - start[0]) * ratio,
+            start[1] + (end[1] - start[1]) * ratio,
+        ])
+
+    return resampled
+
+
+def sort_and_interpolate_points(
+    json_dir,
+    save_dir,
+    num_selected_points=10,
+    num_pad=10,
+    interpolation_method='legacy',
+):
     """
     Sort and interpolate points in JSON files
 
@@ -187,7 +243,11 @@ def sort_and_interpolate_points(json_dir, save_dir, num_selected_points=10, num_
     save_dir: Directory to save processed JSON files
     num_selected_points: Final number of points to select
     num_pad: Number of additional points between each pair of points during interpolation
+    interpolation_method: ``legacy`` or ``arc_length``
     """
+    if interpolation_method not in {'legacy', 'arc_length'}:
+        raise ValueError("interpolation_method must be 'legacy' or 'arc_length'")
+
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
 
@@ -209,6 +269,12 @@ def sort_and_interpolate_points(json_dir, save_dir, num_selected_points=10, num_
                 data = json.load(f)
 
                 for item in data['shapes']:
+                    if interpolation_method == 'arc_length':
+                        item['points'] = _resample_polyline_by_arclength(
+                            item.get('points', []), num_selected_points
+                        )
+                        continue
+
                     if 'y' not in item['label']:
                         # Process root points
                         root = item['points']
@@ -316,6 +382,9 @@ def parse_args():
                         help='Number of points to select (default: 17)')
     parser.add_argument('--num-pad', type=int, default=10,
                         help='Number of additional points between each pair of points during interpolation (default: 10)')
+    parser.add_argument('--interpolation-method', choices=['legacy', 'arc_length'],
+                        default='legacy',
+                        help='Point resampling method (default: legacy)')
     return parser.parse_args()
 
 
@@ -336,7 +405,13 @@ def main():
     if args.task == 'process' or args.task == 'all':
         save_dir = args.save_dir if args.task == 'process' else args.process_dir
         print(f"\n=== Starting to process points and save to {save_dir} ===")
-        sort_and_interpolate_points(args.json_dir, save_dir, args.num_points, args.num_pad)
+        sort_and_interpolate_points(
+            args.json_dir,
+            save_dir,
+            args.num_points,
+            args.num_pad,
+            args.interpolation_method,
+        )
 
     print("\nAll tasks completed!")
 
