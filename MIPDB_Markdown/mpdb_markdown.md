@@ -158,24 +158,26 @@ Labelme is used to annotate both stems and leaves. To balance efficiency and inf
 
 #### 2.2.3 **[NEW—REVISION]** Foreground-plant inclusion and exclusion protocol
 
-**[NEW—REVISION]** The annotation unit is an individually identifiable maize plant in the image. Inclusion is based on whether the plant can be attributed to one plant instance and whether at least one stem segment or leaf midrib can be followed reliably in the visible image. The protocol does not use camera distance as a direct criterion, because the same physical plant can occupy different numbers of pixels in DSLR and UAV images. Instead, visibility and instance identifiability are assessed in image coordinates.
+**[NEW—REVISION]** The annotation unit is an individually identifiable maize plant in the image. The foreground includes, at a minimum, the four plants corresponding to the 2×2 acquisition grid, together with other clearly structured plants situated approximately on the same horizontal plane as the foreground unit. A plant is included when it can be attributed to one plant instance and at least one stem segment and one leaf midrib can be followed reliably in the visible image. The protocol does not use camera distance as a direct criterion, because the same physical plant can occupy different numbers of pixels in DSLR and UAV images. Instead, visibility and instance identifiability are assessed in image coordinates.
 
 **[NEW—REVISION]** For reproducible annotation, apply the following decision rules:
 
 | **[NEW] Image condition** | **[NEW] Annotation rule** |
 |---|---|
-| An individual plant is identifiable and at least one stem or leaf midrib is visibly traceable | Include the plant and annotate all traceable visible organs. |
+| An individual plant is identifiable, with at least one stem segment and one leaf midrib reliably traceable | Include the plant and annotate all traceable organs. |
 | A plant is visible only as an unidentifiable fragment, or cannot be assigned to one plant instance | Exclude it from instance-level keypoint annotation. |
 | A background plant is identifiable but is outside the foreground acquisition unit | Exclude it unless the image is designated for exhaustive-scene annotation. Record this as an exclusion rather than treating it as a confirmed negative plant. |
-| A plant is partially occluded by another plant or field object, but the visible organ can still be attributed to it | Include the visible stem or midrib segment and preserve the plant ID. Do not draw through the occluder. |
+| A plant is partially occluded, but the visible organ and its continuation can be attributed to the same plant | Preserve the plant ID. If the leaf tip or the continuation is visible beyond the occluder and anatomical continuity is clear, trace through the occluded interval; otherwise annotate only the visible attributable segment. |
 | Two plants overlap and their stems or midribs cannot be assigned unambiguously | Annotate only the unambiguous portions; do not merge the two plants into one instance. If no unambiguous portion remains, exclude the fragment. |
-| A leaf tip is visible | Trace the midrib to the visible tip. |
-| A leaf tip is hidden, truncated by the image boundary, or not reliably discernible | Stop at the last visually supported point and do not infer the hidden continuation. |
+| A leaf tip or continuation is visible beyond an occluder | Trace the midrib to the visible tip and, when continuity is clear, infer the intervening hidden segment. |
+| A leaf tip is completely hidden, truncated by the image boundary, or not reliably discernible | Stop at the last point supported by visual evidence and do not infer an unsupported continuation. |
 | The plant is too small or blurred for reliable instance attribution | Exclude it and record the reason as `unidentifiable` or `insufficient_visible_structure`, rather than using an arbitrary pixel threshold. |
 
 **[NEW—REVISION]** For a future quantitative re-annotation audit, each image should additionally record: the foreground acquisition unit, plant instance ID, visibility status, occlusion status, image-boundary truncation, and exclusion reason. A fixed minimum visible-length or pixel-size threshold should be selected from an audited pilot subset before it is applied to the full dataset; it must not be introduced retrospectively without measuring its effect on different growth stages and both imaging modalities.
 
-**[NEW—REVISION]** The released point-line annotations are positive instance annotations, not exhaustive masks of every plant visible in every image. Consequently, an unannotated background plant must not automatically be interpreted as a true negative in detection or recall calculations. Exhaustive-scene detection evaluation requires either complete annotation of all eligible plants or an exclusion/ignore mask for unannotated regions.
+**[NEW—REVISION]** The released point-line annotations are positive instance annotations, not exhaustive masks of every plant visible in every image. Consequently, an unannotated background plant must not automatically be interpreted as a true negative in detection or recall calculations. The recall reported for the annotated subset should therefore be described as **annotated-set recall**, rather than absolute scene recall. Exhaustive-scene detection evaluation requires either complete annotation of all eligible plants or an exclusion/ignore mask for unannotated regions.
+
+**[NEW—REVISION] Quality-control clarification:** During the original campaign, 5% of each annotator's images were rechecked and 15% of derived bounding boxes were inspected as routine error checks. However, the original records did not retain a formal pass threshold, per-image error rate, independent double-annotation set, or complete re-annotation log. These checks should therefore not be interpreted as a retrospective estimate of annotation completeness or inter-annotator agreement. For reproducible future audits, errors should be recorded as missing or incorrectly linked plant instances, stem or midrib traces that depart from visible structure, and bounding boxes that do not enclose the annotated instance. An image with a substantive error should be returned for full re-annotation and rechecked; repeated errors within an annotator's batch should trigger review of the remaining batch. Independent double annotation on a predefined subset should be used to estimate inter-annotator agreement.
 
 
 ### 2.3 How we label images
@@ -201,7 +203,7 @@ Leaf labels use the pattern `plantID-y`, for example `1-y`, `2-y`, `3-y`, `4-y`,
 
 ![本地路径](labelme.assets/1686490535956.jpg)
 
-All leaves belonging to the first maize plant are labeled `1-y`, and so on for other plants. **[NEW—REVISION]** The shared plant ID links each leaf line to its parent plant; it does not imply that the hidden part of an occluded leaf has been reconstructed.
+All leaves belonging to the first maize plant are labeled `1-y`, and so on for other plants. **[NEW—REVISION]** The shared plant ID links each leaf line to its parent plant. A hidden segment may be connected only when the visible continuation or leaf tip provides clear anatomical continuity; otherwise, the hidden part is not reconstructed.
 
 #### 2.3.4 Step 4 – Save
 Save the JSON file to the same folder as the image, using the same filename prefix.
