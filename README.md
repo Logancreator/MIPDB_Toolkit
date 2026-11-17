@@ -23,6 +23,49 @@ are hosted on Google Drive.
 > Hou, Jason John Walsh, Eleni Mangina, Sonia Negrão, Yun Zhou, Ting Yang,
 > Zhen Zhang, Hailin Liu, Jue Ruan
 
+## Dataset and annotation scope
+
+MIPDB (Maize Image Phenotyping Database) contains **35,739** field-acquired
+RGB images collected from 2021 to 2024. Of these, **28,532** were acquired
+with handheld DSLR cameras and **7,207** with UAVs. Structured point-line
+annotations are available for **17,697** images, including 14,855 DSLR images
+and 2,842 UAV images.
+
+MIPDB is primarily a structural point-line and keypoint dataset for maize pose
+estimation and phenotypic analysis. Bounding boxes derived from point-line
+annotations and the separate segmentation experiment are auxiliary resources,
+not exhaustive annotations of every plant visible in every image.
+
+### Foreground-plant annotation rules
+
+The foreground acquisition unit contains, at a minimum, the four plants in the
+2×2 grid, together with other clearly structured plants situated approximately
+on the same horizontal plane. A plant is included when it can be assigned to
+one individual instance and at least one stem segment and one leaf midrib can
+be followed reliably.
+
+- Unidentifiable fragments, plants outside the designated foreground area, and
+  plants too small or blurry for reliable attribution are excluded.
+- For overlap or partial occlusion, preserve the plant ID and annotate only
+  portions that can be assigned to that plant.
+- If a leaf tip or its continuation is visible beyond an occluder and the
+  anatomical continuity is clear, the hidden interval may be connected.
+  Otherwise, stop at the last point supported by visual evidence.
+- The released point-line annotations are positive instance annotations, not
+  exhaustive scene labels. An unannotated background plant must not
+  automatically be treated as a true negative.
+
+The original campaign used visual judgment and did not retain fixed pixel-size,
+camera-distance, or occlusion thresholds, exclusion masks, or
+inter-annotator-agreement records. The 5% image recheck and 15% bounding-box
+inspection were routine error checks rather than a formal completeness
+validation. Recall calculated on the annotated subset should therefore be
+described as **annotated-set recall**, not absolute scene recall.
+
+For the complete annotation protocol, Labelme instructions, quality-control
+clarification, and reproducible re-annotation guidance, see
+[`MIPDB_Markdown/mpdb_markdown.md`](./MIPDB_Markdown/mpdb_markdown.md).
+
 ## Visual examples
 
 The following examples show the types of DSLR and UAV imagery included in
@@ -44,7 +87,7 @@ context; the currently released model weights are listed in
 | [`Script/labelme2coco_withocclusion/`](./Script/labelme2coco_withocclusion) | Labelme-to-COCO conversion tools with occlusion support |
 | [`Script/UAV_Tile/`](./Script/UAV_Tile) | Utilities for tiling UAV orthophotos |
 | [`Script/Viz/`](./Script/Viz) | Dataset statistics and visualization utilities |
-| [`MIPDB_Markdown/`](./MIPDB_Markdown) | Annotation, dataset, and data-processing documentation |
+| [`MIPDB_Markdown/`](./MIPDB_Markdown) | Detailed annotation protocol and Labelme guide |
 | [`Reference/`](./Reference) | Reference papers related to the project |
 
 ## Available models
